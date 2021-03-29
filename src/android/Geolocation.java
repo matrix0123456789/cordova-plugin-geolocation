@@ -18,9 +18,15 @@
 
 package org.apache.cordova.geolocation;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.Manifest;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Build;
+
+import androidx.core.app.ActivityCompat;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -30,31 +36,55 @@ import org.apache.cordova.PluginResult;
 import org.apache.cordova.LOG;
 import org.json.JSONArray;
 import org.json.JSONException;
-
+import org.json.JSONObject;
 import javax.security.auth.callback.Callback;
+
+import static android.location.Criteria.POWER_LOW;
 
 public class Geolocation extends CordovaPlugin {
 
     String TAG = "GeolocationPlugin";
     CallbackContext context;
 
-    String [] permissions = { Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION };
+    String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
 
 
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         LOG.d(TAG, "We are entering execute");
         context = callbackContext;
-        if(action.equals("getPermission"))
-        {
-            if(hasPermisssion())
-            {
+        if (action.equals("getPermission")) {
+            if (hasPermisssion()) {
                 PluginResult r = new PluginResult(PluginResult.Status.OK);
                 context.sendPluginResult(r);
                 return true;
-            }
-            else {
+            } else {
                 PermissionHelper.requestPermissions(this, 0, permissions);
             }
+            return true;
+        }
+        if (action.equals("getLocation")) {
+            LocationManager locationManager = (LocationManager) cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+
+            if (hasPermisssion()) {
+                Criteria criteria = new Criteria();
+                criteria.setAccuracy(Criteria.ACCURACY_FINE);
+                criteria.setPowerRequirement(Criteria.POWER_LOW);
+                criteria.setAltitudeRequired(false);
+                criteria.setBearingRequired(false);
+                String bestAvailableProvider = locationManager.getBestProvider(criteria, true);
+                Location lastKnown = locationManager.getLastKnownLocation(bestAvailableProvider);
+                JSONObject item = new JSONObject();
+                item.put("accuracy", null);
+                item.put("altitude", null);
+                item.put("altitudeAccuracy", null);
+                item.put("heading", null);
+                item.put("latitude", lastKnown.getLatitude());
+                item.put("longitude",lastKnown.getLongitude());
+                item.put("speed", null);
+                PluginResult r = new PluginResult(PluginResult.Status.OK, item.toString());
+                context.sendPluginResult(r);
+            }
+
             return true;
         }
         return false;
