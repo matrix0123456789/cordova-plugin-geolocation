@@ -80,7 +80,7 @@ public class Geolocation extends CordovaPlugin {
                 item.put("heading", lastKnown.getBearing());
                 item.put("latitude", lastKnown.getLatitude());
                 item.put("longitude",lastKnown.getLongitude());
-                item.put("speed", lastKnown.getSpeed());
+                item.put("velocity", lastKnown.getSpeed());
                 PluginResult r = new PluginResult(PluginResult.Status.OK, item.toString());
                 context.sendPluginResult(r);
             }
