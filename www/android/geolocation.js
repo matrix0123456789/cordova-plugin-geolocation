@@ -39,6 +39,7 @@ var geolocation = {
             }
         };
         var win2 = function (p) {
+            p=JSON.parse(p);
             var pos = new Position(
                 {
                     latitude: p.latitude,
