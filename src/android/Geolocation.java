@@ -74,13 +74,13 @@ public class Geolocation extends CordovaPlugin {
                 String bestAvailableProvider = locationManager.getBestProvider(criteria, true);
                 Location lastKnown = locationManager.getLastKnownLocation(bestAvailableProvider);
                 JSONObject item = new JSONObject();
-                item.put("accuracy", null);
-                item.put("altitude", null);
+                item.put("accuracy", lastKnown.getAccuracy());
+                item.put("altitude", lastKnown.getAltitude());
                 item.put("altitudeAccuracy", null);
-                item.put("heading", null);
+                item.put("heading", lastKnown.getBearing());
                 item.put("latitude", lastKnown.getLatitude());
                 item.put("longitude",lastKnown.getLongitude());
-                item.put("speed", null);
+                item.put("speed", lastKnown.getSpeed());
                 PluginResult r = new PluginResult(PluginResult.Status.OK, item.toString());
                 context.sendPluginResult(r);
             }
