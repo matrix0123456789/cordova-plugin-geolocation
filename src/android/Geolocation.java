@@ -18,13 +18,17 @@
 
 package org.apache.cordova.geolocation;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.Manifest;
 import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Looper;
 
 import androidx.core.app.ActivityCompat;
 
@@ -37,6 +41,7 @@ import org.apache.cordova.LOG;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import javax.security.auth.callback.Callback;
 
 import static android.location.Criteria.POWER_LOW;
@@ -49,6 +54,7 @@ public class Geolocation extends CordovaPlugin {
     String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
 
 
+    @SuppressLint("MissingPermission")
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         LOG.d(TAG, "We are entering execute");
         context = callbackContext;
@@ -67,24 +73,42 @@ public class Geolocation extends CordovaPlugin {
 
             if (hasPermisssion()) {
                 Criteria criteria = new Criteria();
-                criteria.setAccuracy(Criteria.ACCURACY_FINE);
                 criteria.setPowerRequirement(Criteria.POWER_LOW);
-                criteria.setAltitudeRequired(false);
-                criteria.setBearingRequired(false);
                 String bestAvailableProvider = locationManager.getBestProvider(criteria, true);
-                Location lastKnown = locationManager.getLastKnownLocation(bestAvailableProvider);
-                JSONObject item = new JSONObject();
-                item.put("accuracy", lastKnown.getAccuracy());
-                item.put("altitude", lastKnown.getAltitude());
-                item.put("altitudeAccuracy", null);
-                item.put("heading", lastKnown.getBearing());
-                item.put("latitude", lastKnown.getLatitude());
-                item.put("longitude",lastKnown.getLongitude());
-                item.put("velocity", lastKnown.getSpeed());
-                PluginResult r = new PluginResult(PluginResult.Status.OK, item.toString());
-                context.sendPluginResult(r);
-            }
+                locationManager.requestSingleUpdate(criteria, new LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        JSONObject item = new JSONObject();
+                        try {
+                            item.put("accuracy", location.getAccuracy());
+                            item.put("altitude", location.getAltitude());
+                            item.put("altitudeAccuracy", null);
+                            item.put("heading", location.getBearing());
+                            item.put("latitude", location.getLatitude());
+                            item.put("longitude", location.getLongitude());
+                            item.put("velocity", location.getSpeed());
+                        } catch (JSONException ex) {
+                        }
+                        PluginResult r = new PluginResult(PluginResult.Status.OK, item.toString());
+                        context.sendPluginResult(r);
+                    }
 
+                    @Override
+                    public void onStatusChanged(String s, int i, Bundle bundle) {
+
+                    }
+
+                    @Override
+                    public void onProviderEnabled(String s) {
+
+                    }
+
+                    @Override
+                    public void onProviderDisabled(String s) {
+
+                    }
+                }, Looper.myLooper());
+            }
             return true;
         }
         return false;
@@ -92,11 +116,10 @@ public class Geolocation extends CordovaPlugin {
 
 
     public void onRequestPermissionResult(int requestCode, String[] permissions,
-                                          int[] grantResults) throws JSONException
-    {
+                                          int[] grantResults) throws JSONException {
         PluginResult result;
         //This is important if we're using Cordova without using Cordova, but we have the geolocation plugin installed
-        if(context != null) {
+        if (context != null) {
             for (int r : grantResults) {
                 if (r == PackageManager.PERMISSION_DENIED) {
                     LOG.d(TAG, "Permission Denied!");
@@ -112,10 +135,8 @@ public class Geolocation extends CordovaPlugin {
     }
 
     public boolean hasPermisssion() {
-        for(String p : permissions)
-        {
-            if(!PermissionHelper.hasPermission(this, p))
-            {
+        for (String p : permissions) {
+            if (!PermissionHelper.hasPermission(this, p)) {
                 return false;
             }
         }
@@ -127,11 +148,9 @@ public class Geolocation extends CordovaPlugin {
      * the parent class, since we can't initialize it reliably in the constructor!
      */
 
-    public void requestPermissions(int requestCode)
-    {
+    public void requestPermissions(int requestCode) {
         PermissionHelper.requestPermissions(this, requestCode, permissions);
     }
-
 
 
 }
